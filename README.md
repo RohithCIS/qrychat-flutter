@@ -1,16 +1,21 @@
-# chat_app
+# Chatter
 
-A new Flutter project.
+This is a Peer to Peer Chatting app, for people who prefer a private app just for a secret one on one conversation with another person.
 
-## Getting Started
+### Stack
 
-This project is a starting point for a Flutter application.
+    Flutter (Dart)
+    WebSockets (Socket.IO)
+    ExpressJS (RESTful API)
 
-A few resources to get you started if this is your first Flutter project:
+### Setup and Build
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+1. Edit Manifests and pubspec files to rename app if wanted
+2. Run ```flutter pub get``` to install dependencies
+3. Run ```flutter run``` to test it on devices in dev mode
+4. Run ```flutter build apk``` to build apk or ```flutter build appbundle``` for building appbundle
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Usage
+
+    1. Open app, enter your code on the peer's app or their code on your app
+    2. Click "Join Chat" button and start chatting

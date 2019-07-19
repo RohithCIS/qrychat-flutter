@@ -1,4 +1,5 @@
 import 'package:chat_app/components/card_primary.dart';
+import 'package:chat_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
@@ -37,10 +38,22 @@ class _HomeState extends State<Home> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text('Your Code:', style: TextStyle(color: Colors.white)),
-                    Text(
-                      'WX254E',
-                      style: TextStyle(fontSize: 50, color: Colors.white),
-                    )
+                    FutureBuilder<String>(
+                      future: register(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return Text(
+                            snapshot.data,
+                            style: TextStyle(fontSize: 50, color: Colors.white),
+                          );
+                        }
+                        return Center(
+                            child: Container(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ));
+                      },
+                    ),
                   ],
                 ),
               ),

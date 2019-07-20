@@ -1,6 +1,11 @@
 import 'package:chat_app/components/card_primary.dart';
-import 'package:chat_app/services/api_service.dart';
+import 'package:chat_app/models/args.dart';
+import 'package:chat_app/services/api_service.dart' as api_service;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+IO.Socket socket = IO.io('http://192.168.29.16:3000');
 
 class Home extends StatefulWidget {
   Home({Key key}) : super(key: key);
@@ -11,6 +16,21 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final _codeInputController = TextEditingController();
 
+  void _joinChat() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var id = _codeInputController.text;
+    var name = prefs.getString("qrychat_name");
+    var res = await api_service.joinChat(id: id, data: {
+      'name': name,
+      'date': DateTime.now().toIso8601String(),
+      'message': '$name joined the chat.'
+    });
+    if (res) {
+      await prefs.setString('qrychat_key', id);
+      Navigator.pushNamed(context, '/chat', arguments: ScreenArguments(id));
+    }
+  }
+
   @override
   void dispose() {
     _codeInputController.dispose();
@@ -19,6 +39,10 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    socket.on('connect', (_) {
+      print('Connected to Server');
+    });
+
     return new Scaffold(
       backgroundColor: Color(0xff0F1F41),
       body: SingleChildScrollView(
@@ -39,9 +63,13 @@ class _HomeState extends State<Home> {
                   children: <Widget>[
                     Text('Your Code:', style: TextStyle(color: Colors.white)),
                     FutureBuilder<String>(
-                      future: register(),
+                      future: api_service.register(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
+                          socket.on(snapshot.data, (data) {
+                            Navigator.pushNamed(context, '/chat',
+                                arguments: ScreenArguments(snapshot.data));
+                          });
                           return Text(
                             snapshot.data,
                             style: TextStyle(fontSize: 50, color: Colors.white),
@@ -80,8 +108,6 @@ class _HomeState extends State<Home> {
                 margin: EdgeInsets.only(left: 60, right: 60),
                 child: TextField(
                   controller: _codeInputController,
-                  maxLength: 6,
-                  textCapitalization: TextCapitalization.characters,
                   style: TextStyle(color: Colors.white, fontSize: 50),
                   cursorColor: Color(0xff2ed573),
                   decoration: InputDecoration(
@@ -103,7 +129,7 @@ class _HomeState extends State<Home> {
               ),
               RaisedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/chat');
+                  _joinChat();
                 },
                 color: Color(0xff2ed573),
                 padding: EdgeInsets.all(20),

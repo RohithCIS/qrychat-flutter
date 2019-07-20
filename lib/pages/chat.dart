@@ -1,6 +1,13 @@
 import 'package:chat_app/components/chat_receive.dart';
 import 'package:chat_app/components/chat_send.dart';
+import 'package:chat_app/models/args.dart';
+import 'package:chat_app/models/messages.dart';
 import 'package:flutter/material.dart';
+import 'package:chat_app/services/api_service.dart' as api_service;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+IO.Socket socket = IO.io('http://192.168.29.16:3000');
 
 class Chat extends StatefulWidget {
   Chat({Key key}) : super(key: key);
@@ -11,8 +18,35 @@ class Chat extends StatefulWidget {
 class _ChatState extends State<Chat> {
   final _chatController = TextEditingController();
 
+  List<Message> messages = [
+    Message.fromJSON({
+      'mtype': 'info',
+      'name': 'you',
+      'message': 'You joined the Chat!',
+      'date': DateTime.now().toIso8601String()
+    })
+  ];
+
+  void _getMessages() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final ScreenArguments args = ModalRoute.of(context).settings.arguments;
+
+    socket.on(prefs.getString('qrychat_key'), (data) {
+      messages.add(Message.fromJSON(data));
+    });
+
+    var history = await api_service.getMessages(id: args.id);
+    for (var i = 0; i < history.length; i++) {
+      messages.add(history[i]);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    socket.on('connect', (_) {
+      print('Connected to Server');
+    });
+    _getMessages();
     return Scaffold(
         appBar: AppBar(
           title: Text("Chat"),
@@ -24,19 +58,21 @@ class _ChatState extends State<Chat> {
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             Flexible(
-              child: ListView(
+              child: ListView.builder(
+                itemCount: messages.length,
                 padding: EdgeInsets.all(15),
-                children: <Widget>[
-                  ChatSend(
-                    text:
-                        "Hey, How are you? lorem ipsum dolr sit amet, my name is rohith, i am developing a chat application",
-                  ),
-                  ChatReceive(
-                    text:
-                        "I'm Awesome, lorem ipsum dolor site amet, wololo, I ca't wait for MCC to come out on steam, haha, lol",
-                    color: Color(0xff8bc34a),
-                  )
-                ],
+                itemBuilder: (context, index) {
+                  if (messages[index].type == 'message') {
+                    return ChatSend(
+                      text: messages[index].message,
+                    );
+                  } else {
+                    return ChatReceive(
+                      color: Color(0xff8bc34a),
+                      text: messages[index].message,
+                    );
+                  }
+                },
               ),
             ),
             Divider(
@@ -48,9 +84,11 @@ class _ChatState extends State<Chat> {
                 children: <Widget>[
                   Flexible(
                       child: Container(
-                        margin: EdgeInsets.all(10),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: Color(0xffff8a65), borderRadius: BorderRadius.circular(10)),
+                    margin: EdgeInsets.all(10),
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                        color: Color(0xffff8a65),
+                        borderRadius: BorderRadius.circular(10)),
                     child: TextField(
                       minLines: 1,
                       maxLines: 5,
